@@ -1,0 +1,8 @@
+# common/defaults/main.yml
+common_firewall_services:
+  - ssh
+  - cockpit
+  - dhcpv6-client
+
+common_firewall_ports:
+  - 22/tcp

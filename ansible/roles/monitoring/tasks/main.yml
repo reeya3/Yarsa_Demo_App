@@ -1,0 +1,40 @@
+- name: Ensure monitoring directory exists
+  file:
+    path: /home/{{ ansible_user }}/monitoring
+    state: directory
+  become: true
+
+- name: Ensure promtail config dir exists
+  file:
+    path: /etc/promtail
+    state: directory
+  become: true
+
+- name: Render promtail config
+  template:
+    src: promtail-config.yml.j2
+    dest: /etc/promtail/config.yml
+  become: true
+
+- name: Render monitoring stack
+  template:
+    src: docker-stack.yml.j2
+    dest: /home/{{ ansible_user }}/monitoring/docker-stack.yml
+  become: true
+
+- name: Deploy monitoring stack
+  command:
+    cmd: docker stack deploy -c docker-stack.yml monitoring
+    chdir: /home/{{ ansible_user }}/monitoring
+  become: true
+
+- name: Verify monitoring stack
+  command:
+    cmd: docker stack ps monitoring
+    chdir: /home/{{ ansible_user }}/monitoring
+  register: result
+  ignore_errors: true
+  become: true
+
+- debug:
+    var: result.stdout_lines

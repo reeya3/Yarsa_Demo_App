@@ -1,0 +1,12 @@
+---
+# Container images
+node_exporter_image: "quay.io/prometheus/node-exporter:latest"
+promtail_image: "grafana/promtail:2.9.0"
+cadvisor_image: "gcr.io/cadvisor/cadvisor:latest"
+
+# Loki endpoint — set host IP of the machine where Loki is running
+# For example, if your host machine (where Prometheus/Loki/Grafana run) is 192.168.1.10
+loki_host: "192.168.1.68"
+
+# Construct the full Loki push URL
+loki_url: "http://{{ loki_host}}:3100/loki/api/v1/push"

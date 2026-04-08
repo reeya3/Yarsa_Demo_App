@@ -1,0 +1,12 @@
+- name: Check if node is a Swarm manager
+  ansible.builtin.shell: docker info --format '{{ "{{.Swarm.ControlAvailable}}" }}'
+  register: swarm_manager
+  changed_when: false
+  become: true
+
+- name: Initialize Swarm Manager if not already
+  ansible.builtin.command: docker swarm init --advertise-addr {{ ansible_default_ipv4.address }}
+  when: swarm_manager.stdout != "true"
+  register: swarm_init
+  changed_when: swarm_init.rc == 0
+  become: true

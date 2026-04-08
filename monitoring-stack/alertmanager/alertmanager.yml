@@ -1,0 +1,58 @@
+global:
+  smtp_smarthost: "smtp.gmail.com:587"
+  smtp_from: "sender-mail"
+  smtp_auth_username: "receiver-mail"
+  smtp_auth_password: "password"   # use your Gmail App Password
+  smtp_require_tls: true
+  resolve_timeout: 5m
+
+route:
+  receiver: default-receiver
+  group_by: ['alertname', 'instance', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: critical-receiver
+      group_wait: 10s
+      repeat_interval: 1h
+
+    - matchers:
+        - severity="warning"
+      receiver: warning-receiver
+      repeat_interval: 6h
+
+receivers:
+  - name: default-receiver
+    email_configs:
+      - to: "receiver-mail"
+        from: "sender-mail"
+        send_resolved: true
+        headers:
+          Subject: "[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}"
+
+  - name: critical-receiver
+    email_configs:
+      - to: "reveiver-mail"
+        from: "sender-mail"
+        send_resolved: true
+        headers:
+          Subject: "[CRITICAL] {{ .GroupLabels.alertname }} on {{ .GroupLabels.instance }}"
+
+  - name: warning-receiver
+    email_configs:
+      - to: "receiver-mail"
+        from: "sender-mail"
+        send_resolved: true
+        headers:
+          Subject: "[WARNING] {{ .GroupLabels.alertname }}"
+
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname', 'instance']

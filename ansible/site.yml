@@ -1,0 +1,16 @@
+- name: Deploy Dockerized App
+  hosts: app_servers
+  become: true
+  vars_files:
+    - secrets.yml
+  vars:
+    app_image: "reeya3/yarsa-demo:v1.2"
+
+  roles:
+    - common
+    - firewall
+    - docker
+    - swarm
+    - app
+    - nginx
+    - monitoring

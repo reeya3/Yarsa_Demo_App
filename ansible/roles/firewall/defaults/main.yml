@@ -1,0 +1,11 @@
+# Default firewall zone (firewalld)
+firewall_zone: public
+
+# Aggregated services (roles can declare their own)
+firewall_services: []
+
+# Aggregated ports (roles can declare their own)
+firewall_ports: []
+
+# Enable forwarding? Only relevant for firewalld
+firewall_forward: true

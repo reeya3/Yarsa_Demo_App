@@ -1,0 +1,44 @@
+- name: Update packages on Debian/Ubuntu
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Update packages on RedHat/CentOS
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
+  become: true
+  when: ansible_os_family == "RedHat"
+
+- name: Install essential packages on Debian/Ubuntu
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - wget
+      - unzip
+      - jq
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Install essential packages on RedHat/CentOS
+  ansible.builtin.yum:
+    name:
+      - git
+      - curl
+      - wget
+      - unzip
+      - jq
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+    state: present
+  become: true
+  when: ansible_os_family == "RedHat"

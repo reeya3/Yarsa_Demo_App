@@ -1,0 +1,3 @@
+monitoring_firewall_ports:
+  - 9090/tcp
+  - 9100/tcp

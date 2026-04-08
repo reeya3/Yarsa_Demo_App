@@ -1,0 +1,38 @@
+services:
+  app:
+    image: {{ app_image }}
+    environment:
+      - POSTGRES_HOST=db       # must match what app expects
+      - POSTGRES_USER={{ db_user }}
+      - POSTGRES_PASSWORD={{ db_password }}
+      - POSTGRES_DB={{ db_name }}
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+    ports:
+      - "3001:3001"
+    networks:
+      - app-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: {{ db_user }}
+      POSTGRES_PASSWORD: {{ db_password }}
+      POSTGRES_DB: {{ db_name }}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: overlay
+
+volumes:
+  db_data:

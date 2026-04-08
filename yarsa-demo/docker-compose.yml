@@ -1,0 +1,38 @@
+services:
+  app:
+    image: reeya3/yarsa-demo:v1.2
+    environment:
+      - POSTGRES_HOST=db       # must match what app expects
+      - POSTGRES_USER=yarsa
+      - POSTGRES_PASSWORD=yarsa123
+      - POSTGRES_DB=yarsadb
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+    ports:
+      - "3001:3001"
+    networks:
+      - app-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: yarsa
+      POSTGRES_PASSWORD: yarsa123
+      POSTGRES_DB: yarsadb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: overlay
+
+volumes:
+  db_data:

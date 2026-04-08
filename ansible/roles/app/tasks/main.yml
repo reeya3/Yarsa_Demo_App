@@ -1,0 +1,37 @@
+- name: Ensure app directory exists
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/app
+    state: directory
+  become: true
+
+- name: Render Docker stack file from template
+  ansible.builtin.template:
+    src: docker-stack.yml.j2
+    dest: /home/{{ ansible_user }}/app/docker-stack.yml
+    force: yes   # ensures it always re-renders with updated vault variables
+  become: true
+
+- name: Render environment file from template
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: /home/{{ ansible_user }}/app/app.env
+    force: yes
+  become: true
+
+- name: Deploy the Swarm stack
+  ansible.builtin.command:
+    cmd: docker stack deploy -c docker-stack.yml myapp
+    chdir: /home/{{ ansible_user }}/app
+  become: true
+
+- name: Verify stack is running
+  ansible.builtin.command:
+    cmd: docker stack ps myapp
+    chdir: /home/{{ ansible_user }}/app
+  register: stack_status
+  ignore_errors: true
+  become: true
+
+- name: Show stack status
+  ansible.builtin.debug:
+    var: stack_status.stdout_lines

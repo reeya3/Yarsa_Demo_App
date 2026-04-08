@@ -1,0 +1,3 @@
+swarm_firewall_ports:
+  - 2377/tcp
+  - 7946/tcp

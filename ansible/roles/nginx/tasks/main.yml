@@ -1,0 +1,88 @@
+- name: Install NGINX
+  ansible.builtin.package:
+    name: "{{ 'nginx' if ansible_os_family == 'RedHat' else 'nginx-full' }}"
+    state: present
+  become: true
+
+- name: Install OpenSSL
+  ansible.builtin.package:
+    name: openssl
+    state: present
+  become: true
+
+- name: Remove default nginx site (if exists)
+  file:
+    path: "{{ '/etc/nginx/conf.d/default.conf' if ansible_os_family == 'RedHat' else '/etc/nginx/sites-enabled/default' }}"
+    state: absent
+  become: true
+
+- name: Create directories for SSL if not exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ssl_cert_path | dirname }}"
+    - "{{ ssl_key_path | dirname }}"
+  become: true
+
+- name: Create self-signed SSL certificate
+  command: >
+    openssl req -x509 -nodes -days 365
+    -newkey rsa:2048
+    -keyout {{ ssl_key_path }}
+    -out {{ ssl_cert_path }}
+    -subj "/CN={{ server_name }}"
+  args:
+    creates: "{{ ssl_cert_path }}"
+  become: true
+
+- name: Deploy NGINX config
+  template:
+    src: nginx_selfsigned.conf.j2
+    dest: "{{ '/etc/nginx/conf.d/' + server_name + '.conf' if ansible_os_family == 'RedHat' else '/etc/nginx/sites-available/' + server_name }}"
+  become: true
+
+- name: Enable site (Debian only)
+  file:
+    src: "/etc/nginx/sites-available/{{ server_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ server_name }}"
+    state: link
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure log files exist
+  file:
+    path: "{{ item }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - "/var/log/nginx/{{ server_name }}.access.log"
+    - "/var/log/nginx/{{ server_name }}.error.log"
+  become: true
+
+- name: Test nginx configuration
+  command: nginx -t
+  become: true
+
+- name: Ensure NGINX is enabled and running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+  become: true
+
+- name: Allow NGINX to connect to network (SELinux RedHat)
+  ansible.builtin.command: setsebool -P httpd_can_network_connect 1
+  when: ansible_os_family == "RedHat"
+  become: true
+
+- name: Restart NGINX after SELinux update
+  service:
+    name: nginx
+    state: restarted
+  when: ansible_os_family == "RedHat"
+  become: true
+

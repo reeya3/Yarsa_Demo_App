@@ -1,0 +1,111 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: production
+    monitor: central
+
+# ── Alertmanager Configuration ───────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093   # Ensure this is resolvable
+
+# ── Rule Files ───────────────────────────────────────────────────────────────
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# ── Scrape Configurations ────────────────────────────────────────────────────
+scrape_configs:
+
+  # ── Prometheus Self Monitoring ─────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  # ── cAdvisor (Container Metrics) ───────────────────────────────────────────
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - 172.16.137.142:8081
+          - 13.127.18.10:8081
+        labels:
+          service: cadvisor
+
+  # ── Node Exporter (VM Metrics - Local) ─────────────────────────────────────
+  - job_name: node_exporter
+    static_configs:
+      - targets:
+          - 172.16.137.142:9100
+        labels:
+          instance: app-vm
+          environment: production
+
+  # ── Node Exporter (AWS VM Metrics) ─────────────────────────────────────────
+  - job_name: node_exporter_aws
+    static_configs:
+      - targets:
+          - 13.127.18.10:9100
+        labels:
+          instance: app-aws
+          environment: production-aws
+
+  # ── Blackbox HTTP Probe (App Uptime) ───────────────────────────────────────
+  - job_name: blackbox_http
+    metrics_path: /probe
+    params:
+      module:
+        - http_2xx
+
+    static_configs:
+      - targets:
+          - http://172.16.137.142:3001
+          - http://172.16.137.142:3001/users
+        labels:
+          env: local
+
+      - targets:
+          - http://13.127.18.10:3001
+          - http://13.127.18.10:3001/users
+        labels:
+          env: aws
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+
+      - source_labels: [__param_target]
+        target_label: instance
+
+      - target_label: __address__
+        replacement: blackbox:9115   # Ensure service exists
+
+  # ── Blackbox ICMP (Ping Monitoring) ────────────────────────────────────────
+  - job_name: blackbox_icmp
+    metrics_path: /probe
+    params:
+      module:
+        - icmp
+
+    static_configs:
+      - targets:
+          - 172.16.137.142
+        labels:
+          env: local
+
+      - targets:
+          - 13.127.18.10
+        labels:
+          env: aws
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+
+      - source_labels: [__param_target]
+        target_label: instance
+
+      - target_label: __address__
+        replacement: blackbox:9115

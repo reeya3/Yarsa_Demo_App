@@ -1,0 +1,19 @@
+{
+  "name": "NodeJS Dev Container",
+  "build": {
+    "dockerfile": "dev.Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "appuser",
+  "postCreateCommand": "npm install",
+  "forwardPorts": [3001],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}

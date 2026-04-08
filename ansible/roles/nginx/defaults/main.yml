@@ -1,0 +1,7 @@
+server_name: yarsa-demo.local      # change if needed
+backend_url: http://127.0.0.1:3001
+ssl_cert_path: /etc/ssl/certs/nginx-selfsigned.crt
+ssl_key_path: /etc/ssl/private/nginx-selfsigned.key
+nginx_firewall_ports:
+  - 80/tcp
+  - 443/tcp

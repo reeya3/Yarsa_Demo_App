@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.11.0
+    deploy:
+      replicas: 1
+    ports:
+      - "9100:9100"
+    volumes:
+      - "/:/host:ro,rslave"
+    command:
+      - "--path.rootfs=/host"
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    deploy:
+      replicas: 1
+    ports:
+      - "8081:8080"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    deploy:
+      replicas: 1
+    volumes:
+      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      - "/var/log:/var/log:ro"
+      - "/etc/promtail/config.yml:/etc/promtail/config.yml"
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: overlay

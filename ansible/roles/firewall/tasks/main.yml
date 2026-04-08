@@ -1,0 +1,95 @@
+---
+# -----------------------------
+# Install firewall packages
+# -----------------------------
+- name: Install firewalld on RHEL family
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install ufw on Debian family
+  ansible.builtin.package:
+    name: ufw
+    state: present
+  when: ansible_os_family == "Debian"
+
+# -----------------------------
+# Enable firewall services
+# -----------------------------
+- name: Enable and start firewalld on RHEL
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+  when: ansible_os_family == "RedHat"
+
+- name: Enable ufw on Debian
+  ansible.builtin.command:
+    cmd: ufw enable
+  args:
+    creates: /etc/ufw/ufw.conf
+  when: ansible_os_family == "Debian"
+
+# -----------------------------
+# Allow services
+# -----------------------------
+- name: Open services on RHEL
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    zone: "{{ firewall_zone }}"
+    permanent: true
+    state: enabled
+  loop: "{{ firewall_services }}"
+  when: ansible_os_family == "RedHat"
+
+- name: Open services on Debian (using ufw)
+  ansible.builtin.ufw:
+    rule: allow
+    name: "{{ item }}"
+  loop: "{{ firewall_services }}"
+  when: ansible_os_family == "Debian"
+
+# -----------------------------
+# Allow ports
+# -----------------------------
+- name: Open TCP ports on RHEL
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    zone: "{{ firewall_zone }}"
+    permanent: true
+    state: enabled
+  loop: "{{ firewall_ports }}"
+  when: ansible_os_family == "RedHat"
+
+- name: Open TCP ports on Debian
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ item | regex_replace('/tcp$', '') }}"
+    proto: tcp
+  loop: "{{ firewall_ports }}"
+  when: ansible_os_family == "Debian"
+
+# -----------------------------
+# Enable forwarding for firewalld only
+# -----------------------------
+- name: Enable forwarding on RHEL
+  ansible.posix.firewalld:
+    forward: yes
+    zone: "{{ firewall_zone }}"
+    permanent: true
+    state: enabled
+  when:
+    - ansible_os_family == "RedHat"
+    - firewall_forward
+
+# -----------------------------
+# Reload firewalls to apply
+# -----------------------------
+- name: Reload firewalld
+  ansible.builtin.command: firewall-cmd --reload
+  when: ansible_os_family == "RedHat"
+
+- name: Reload ufw
+  ansible.builtin.command: ufw reload
+  when: ansible_os_family == "Debian"
