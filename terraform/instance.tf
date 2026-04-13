@@ -1,18 +1,34 @@
-#############################
-# EC2 Instance Creation
-#############################
-resource "aws_instance" "yarsa_app" {
-  ami                         = var.instance_image_id
-  instance_type               = var.instance_type
-  key_name                    = aws_key_pair.yarsa-key-tf.key_name
-  vpc_security_group_ids      = [aws_security_group.allow_tls.id]
+#datasouce for image ami
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = [var.image_name]
+  }
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = ["099720109477"] # Canonical
+}
+
+#creating instance
+resource "aws_instance" "yarsa-app" {
+  # ami                    = var.instance_image_id
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.yarsa-key-tf.key_name
+  vpc_security_group_ids = [aws_security_group.allow_tls.id]
   associate_public_ip_address = true
 
   tags = {
-    Name = "yarsa-ec2-instance"
+    name = "yarsa-ec2-instance"
   }
 }
-
 #############################
 # Dynamic Ansible Inventory
 #############################
@@ -78,3 +94,4 @@ output "app_server_ip" {
 output "ssh_command" {
   value = "ssh ubuntu@${aws_instance.yarsa_app.public_ip} -i ${pathexpand("${path.module}/id_rsa")}"
 }
+

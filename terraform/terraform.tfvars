@@ -1,4 +1,5 @@
-ports             = [22, 80, 443, 5432, 2377, 7946, 4789]
-instance_image_id = "ami-05d2d839d4f73aafb"
-instance_type     = "t2.micro"
+ports             = [22, 80, 443, 3306]
+# instance_image_id = "ami-03793655b06c6e29a"
+instance_type     = "t4g.nano"
 aws_region        = "ap-south-1"
+image_name = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"
